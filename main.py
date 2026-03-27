@@ -665,8 +665,12 @@ app = FastAPI(title="CoNomad Chatbot API", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://conomad.es", "http://localhost"],
-    allow_methods=["POST"],
+    allow_origins=[
+        "https://conomad.es",
+        "https://www.conomad.es",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
