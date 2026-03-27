@@ -1,0 +1,13 @@
+requests
+beautifulsoup4
+lxml
+openai
+faiss-cpu
+tiktoken
+numpy
+python-dotenv
+tqdm
+ipywidgets
+fastapi
+uvicorn
+pydantic
