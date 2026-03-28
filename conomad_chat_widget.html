@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CoNomad Chat Widget</title>
+  <style>
+#conomad-chat-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  width: 60px;
+  height: 60px;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 9999;
+}
+
+#conomad-chat-window {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 320px;
+  height: 420px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9999;
+  font-family: Arial, sans-serif;
+}
+
+.chat-header {
+  background: #000;
+  color: #fff;
+  padding: 12px;
+  font-weight: bold;
+}
+
+#chat-messages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  background: #f5f5f5;
+}
+
+.bubble {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  font-size: 14px;
+}
+
+.bubble.user {
+  background: #000;
+  color: #fff;
+  margin-left: auto;
+}
+
+.bubble.bot {
+  background: #e5e5ea;
+  color: #000;
+}
+
+.chat-input-area {
+  display: flex;
+  border-top: 1px solid #ddd;
+}
+
+#chat-input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  outline: none;
+}
+
+#chat-send {
+  border: none;
+  background: #000;
+  color: #fff;
+  padding: 0 16px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- Botón flotante -->
+<button id="conomad-chat-toggle" title="Abrir chat">💬</button>
+
+<!-- Ventana de chat -->
+<div id="conomad-chat-window">
+  <div class="chat-header">
+    <span>🌊</span> CoNomad Assistant
+  </div>
+  <div id="chat-messages">
+    <div class="bubble bot">
+      ¡Hola! Soy el asistente virtual de CoNomad. ¿En qué puedo ayudarte?
+    </div>
+  </div>
+  <div class="chat-input-area">
+    <input id="chat-input" type="text"
+           placeholder="Escribe tu pregunta..." />
+    <button id="chat-send">➤</button>
+  </div>
+</div>
+
+<script>
+  // ── Configuración ──
+  // Sustituye esta URL por tu endpoint FastAPI/Flask desplegado
+  const API_ENDPOINT = "http://localhost:8000/chat";
+
+  const toggle   = document.getElementById("conomad-chat-toggle");
+  const chatWin  = document.getElementById("conomad-chat-window");
+  const msgArea  = document.getElementById("chat-messages");
+  const input    = document.getElementById("chat-input");
+  const sendBtn  = document.getElementById("chat-send");
+
+  let history = [];
+
+  // Alternar visibilidad
+  toggle.addEventListener("click", () => {
+    chatWin.classList.toggle("open");
+    toggle.textContent = chatWin.classList.contains("open") ? "✕" : "💬";
+    if (chatWin.classList.contains("open")) input.focus();
+  });
+
+  function addBubble(text, role) {
+    const div = document.createElement("div");
+    div.classList.add("bubble", role);
+    div.innerHTML = text.replace(/
+/g, "<br>");
+    msgArea.appendChild(div);
+    msgArea.scrollTop = msgArea.scrollHeight;
+    return div;
+  }
+
+  async function sendMessage() {
+    const query = input.value.trim();
+    if (!query) return;
+    input.value = "";
+    sendBtn.disabled = true;
+
+    addBubble(query, "user");
+    const typingDiv = addBubble("Escribiendo…", "bot typing");
+
+    try {
+      const res = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, history }),
+      });
+      const data = await res.json();
+      typingDiv.remove();
+      addBubble(data.answer, "bot");
+      history = data.history;
+    } catch (err) {
+      typingDiv.remove();
+      addBubble("⚠️ Error de conexión. Inténtalo de nuevo.", "bot");
+    }
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>
+</body>
+</html>
